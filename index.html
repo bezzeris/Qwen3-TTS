@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen3-TTS | Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --secondary: #4b0082;
+            --bg: #050505;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+            --accent: #00f2ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(138, 43, 226, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(0, 242, 255, 0.1) 0%, transparent 40%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .studio-grid { grid-template-columns: 1fr; }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        textarea, select, input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        textarea:focus, select:focus, input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+        }
+
+        textarea {
+            height: 120px;
+            resize: none;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .slider-row {
+            margin-bottom: 15px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .value-tag {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(138, 43, 226, 0.4);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .audio-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            text-align: center;
+            display: none;
+        }
+
+        audio {
+            width: 100%;
+            filter: invert(100%) hue-rotate(180deg);
+        }
+
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Qwen3-TTS Studio</h1>
+        <p>Generación de voz con Inteligencia Artificial profesional</p>
+    </header>
+
+    <div class="studio-grid">
+        <div class="main-inputs">
+            <div class="input-group">
+                <label>Texto a Sintetizar</label>
+                <textarea id="textInput" placeholder="Escribe lo que quieres que la IA diga..."></textarea>
+            </div>
+            
+            <div class="input-group">
+                <label>Instrucciones de Voz (Emociones, tono...)</label>
+                <input type="text" id="instructInput" placeholder="Ej: Con voz muy alegre y rápida, o con tono de suspenso.">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label>Narrador (Speaker)</label>
+                    <select id="speakerSelect">
+                        <option value="Vivian">Vivian (Chino/Español)</option>
+                        <option value="Serena">Serena (Dulce)</option>
+                        <option value="Uncle_Fu">Uncle Fu (Mayor)</option>
+                        <option value="Dylan">Dylan (Natural)</option>
+                        <option value="Eric">Eric (Chengdu)</option>
+                        <option value="Ryan">Ryan (Dinámico - Inglés)</option>
+                        <option value="Aiden">Aiden (Americano)</option>
+                        <option value="Ono_Anna">Ono Anna (Japonés)</option>
+                        <option value="Sohee">Sohee (Coreano)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Idioma</label>
+                    <select id="languageSelect">
+                        <option value="Spanish">Español</option>
+                        <option value="English">Inglés</option>
+                        <option value="Chinese">Chino</option>
+                        <option value="Japanese">Japonés</option>
+                        <option value="Korean">Coreano</option>
+                        <option value="German">Alemán</option>
+                        <option value="French">Francés</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <h3 style="margin-bottom: 20px;">Parámetros Avanzados</h3>
+            
+            <div class="slider-row">
+                <div class="slider-header">
+                    <label>Temperatura</label>
+                    <span class="value-tag" id="tempVal">0.9</span>
+                </div>
+                <input type="range" id="tempSlider" min="0.1" max="1.5" step="0.1" value="0.9">
+            </div>
+
+            <div class="slider-row">
+                <div class="slider-header">
+                    <label>Top P</label>
+                    <span class="value-tag" id="topPVal">1.0</span>
+                </div>
+                <input type="range" id="topPSlider" min="0.1" max="1.0" step="0.05" value="1.0">
+            </div>
+
+            <div class="slider-row">
+                <div class="slider-header">
+                    <label>Top K</label>
+                    <span class="value-tag" id="topKVal">50</span>
+                </div>
+                <input type="range" id="topKSlider" min="1" max="100" step="1" value="50">
+            </div>
+
+            <div class="slider-row">
+                <div class="slider-header">
+                    <label>Penalidad Repetición</label>
+                    <span class="value-tag" id="repPVal">1.05</span>
+                </div>
+                <input type="range" id="repPSlider" min="1.0" max="2.0" step="0.05" value="1.05">
+            </div>
+            
+            <button class="btn-generate" id="generateBtn">
+                <span id="btnText">GENERAR SONIDO</span>
+                <div class="loader" id="loader"></div>
+            </button>
+            <div id="statusMsg" class="status"></div>
+        </div>
+    </div>
+
+    <div class="audio-container" id="audioContainer">
+        <p style="margin-bottom: 10px; font-size: 0.9rem;">Resultado:</p>
+        <audio id="audioPlayer" controls></audio>
+        <div style="margin-top: 15px;">
+            <a id="downloadBtn" href="#" download="voz_qwen.wav" style="color: var(--accent); text-decoration: none; font-size: 0.8rem;">Descargar Archivo</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Actualización de etiquetas de valor
+    const sliders = [
+        {id: 'tempSlider', valId: 'tempVal'},
+        {id: 'topPSlider', valId: 'topPVal'},
+        {id: 'topKSlider', valId: 'topKVal'},
+        {id: 'repPSlider', valId: 'repPVal'}
+    ];
+
+    sliders.forEach(s => {
+        const slider = document.getElementById(s.id);
+        const label = document.getElementById(s.valId);
+        slider.oninput = () => label.innerText = slider.value;
+    });
+
+    // Acción de Generar
+    const generateBtn = document.getElementById('generateBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const audioContainer = document.getElementById('audioContainer');
+    const loader = document.getElementById('loader');
+    const btnText = document.getElementById('btnText');
+    const statusMsg = document.getElementById('statusMsg');
+
+    generateBtn.onclick = async () => {
+        const data = {
+            text: document.getElementById('textInput').value,
+            instruct: document.getElementById('instructInput').value,
+            speaker: document.getElementById('speakerSelect').value,
+            language: document.getElementById('languageSelect').value,
+            temperature: parseFloat(document.getElementById('tempSlider').value),
+            top_p: parseFloat(document.getElementById('topPSlider').value),
+            top_k: parseInt(document.getElementById('topKSlider').value),
+            repetition_penalty: parseFloat(document.getElementById('repPSlider').value)
+        };
+
+        if (!data.text) {
+            alert("Por favor escribe algún texto.");
+            return;
+        }
+
+        // UI Feedback
+        generateBtn.disabled = true;
+        loader.style.display = 'block';
+        btnText.style.display = 'none';
+        statusMsg.innerText = "Pensando y sintetizando...";
+        audioContainer.style.display = 'none';
+
+        try {
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) throw new Error("Error en el servidor");
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            
+            audioPlayer.src = url;
+            document.getElementById('downloadBtn').href = url;
+            audioContainer.style.display = 'block';
+            statusMsg.innerText = "¡Generado con éxito!";
+            audioPlayer.play();
+
+        } catch (error) {
+            alert("Hubo un error: " + error.message);
+            statusMsg.innerText = "Error en la generación.";
+        } finally {
+            generateBtn.disabled = false;
+            loader.style.display = 'none';
+            btnText.style.display = 'inline';
+        }
+    };
+</script>
+
+</body>
+</html>
